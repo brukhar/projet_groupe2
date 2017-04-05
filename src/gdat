@@ -1,0 +1,4 @@
+set terminal x11
+plot 'RESU/r' w l
+pause -1
+press return

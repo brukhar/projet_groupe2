@@ -72,11 +72,6 @@ typedef float real;
 
 // }}}
 
-real* alloue_tab(int n)
-{
-  return (real*)malloc(n*sizeof(real));
-}
-
 void conservatives(real Y[_M], real W[_M])
 {
   int i;
@@ -85,7 +80,7 @@ void conservatives(real Y[_M], real W[_M])
   {
     W[i] = Y[i]*Y[0];
   }
-  W[4] = (3*Y[4] + Y[0]*(Y[1]*Y[1] + Y[2]*Y[2] + Y[3]*Y[3]) + Y[5]*Y[5] + Y[6]*Y[6] + Y[7]*Y[7])/2;
+  W[4] = (_GAM-1)*(Y[4] + Y[0]*(Y[1]*Y[1] + Y[2]*Y[2] + Y[3]*Y[3])/2 + (Y[5]*Y[5] + Y[6]*Y[6] + Y[7]*Y[7])/2);
   for(i = 5; i < _M; i++)
   {
     W[i] = Y[i];
@@ -100,7 +95,7 @@ void primitives(real Y[_M], real W[_M])
   {
     Y[i] = W[i]/W[0];
   }
-  Y[4] = (2*W[4] + Y[0]*(Y[1]*Y[1] + Y[2]*Y[2] + Y[3]*Y[3]) + W[5]*W[5] + W[6]*W[6] + W[7]*W[7])/3;
+  Y[4] = W[4]/(_GAM-1) + Y[0]*(Y[1]*Y[1] + Y[2]*Y[2] + Y[3]*Y[3])/2 + (W[5]*W[5] + W[6]*W[6] + W[7]*W[7])/2;
   for(i = 5; i < _M; i++)
   {
     Y[i] = W[i];
@@ -109,7 +104,7 @@ void primitives(real Y[_M], real W[_M])
 
 real* flux(real W[_M], real n[3])
 {
-  real* F = alloue_tab(_M);
+  real* F = (real*)malloc(_M*sizeof(real));
   real Y[_M];
   primitives(Y, W);
   int i;
@@ -240,9 +235,32 @@ void Wexact(real* x, real* y, real* W){
 
 void Ref2PhysMap(real* xx, real* yy, real* x, real* y)
 {
-  *x = *xx * _LONGUEURX - _XMIN;
-  *y = *yy * _LONGUEURY - _YMIN;
+  *x = *xx * _LONGUEURX + _XMIN;
+  *y = *yy * _LONGUEURY + _YMIN;
 }
+
+void InitData(real Wn1[_NXTRANSBLOCK*_NYTRANSBLOCK*_M])
+{
+  int i,j,k;
+  real x,y;
+  real xx, yy;
+  real W[_M];
+  for(i = 0; i < _NXTRANSBLOCK; i++)
+  {
+    for(j = 0; j < _NYTRANSBLOCK; j++)
+    {
+      xx = i/_NXTRANSBLOCK;
+      yy = j/_NYTRANSBLOCK;
+      Ref2PhysMap(&xx, &yy, &x, &y);
+      Wexact(&x, &y, W);
+      for(k = 0; k < _M; k++)
+      {
+        Wn1[i*_NXTRANSBLOCK + j + k*(_NXTRANSBLOCK*_NYTRANSBLOCK)] = W[k];
+      }
+    }
+  }
+}
+
 
 
 // gnuplot {{{
@@ -535,12 +553,17 @@ int main(int argc, char const* argv[]){
 
     int iter = 0;
     real dtt = 0;
-    for(real t=0;t<_TMAX; t=t+dtt){
+    /*for(real t=0;t<_TMAX; t=t+dtt){
 
         cout << "Iter="<<iter++<< endl;;
-        TimeStepCPU(Wn1,&dtt);
+        #ifdef _1D
+            TimeStepCPU1D(Wn1,&dtt);
+        #endif
+        #ifdef _2D
+            TimeStepCPU2D(Wn1,&dtt);
+        #endif
         cout << t << endl;
-    }
+    }*/
 
 #ifdef _1D
     GnuPlot(Wn1);
