@@ -1,0 +1,95 @@
+\documentclass[a4paper,10pt]{article}
+
+\usepackage{amsmath, amssymb,amsfonts,  mathrsfs}
+\usepackage{amsthm}%\usepackage[T1]{fontenc}
+\usepackage{a4wide}
+\usepackage[latin1]{inputenc}
+%\usepackage{fancyhdr} %pour les hauts et bas de page
+\usepackage[francais]{babel}% donne de bonnes c\'esures  en francais
+\usepackage{titlesec}%pour modifier le style des sections
+\usepackage{float}%pour fixer les flottants
+\usepackage{url}%pour ecrire une adresse d'un site web
+\usepackage[all]{xy}%pour faire des diagrammes
+\usepackage[dvips]{graphicx}
+\usepackage{nopageno} % pour supproimer les numeros des pages
+
+\usepackage{pdfsync}
+\pagestyle{myheadings}
+\markright{ENSIIE 1A Année 2016/2017 \\ MPM2 Projet Math}
+%\pagenumbering{empty}
+
+\newtheorem{definition}{Définition}
+
+%%%%%%%%%  interlignes et indentation
+
+\begin{document}
+\begin{center}
+\textbf{\huge{Groupe 2: Magnéto-Hydro-Dynamique}}
+\end{center}
+\medskip
+
+\section{Organisation}
+
+\subsection{Règles}
+
+\begin{itemize}
+\item 3 séances de 3h30.
+\item Travail réalisé en trinôme.
+\item Un travail copié ou effectué en collaboration entre $N$ trinôme divise les
+  notes par $N$.
+\item LES DOCUMENTS ET SOURCES RENDUS EN RETARD NE SERONT PAS PRIS EN COMPTE.
+\end{itemize}
+
+\subsection{Objectifs et contenu du travail}
+
+Les projets math consistent en la résolution mathématique d'un problème et à sa
+mise en oeuvre informatique. Ce qui est attendu est donc :
+
+\begin{itemize}
+\item Un rapport écrit présentant de manière claire le problème ainsi que sa
+  solution et une description des algorithmes proposés.
+\item Les sources du programme développé ainsi qu'un script permettant la
+  compilation et l'exécution de celui-ci. Vous utilisez le language C++.
+\end{itemize}
+
+\section{Sujet}
+
+\subsection{Contexte mathématiques}
+
+\begin{enumerate}
+    \item Donner le système d'équations de la Magnéto-Hydro-Dynamique (MHD).
+    \item Afin ce respecter la condition $\nabla \cdot B = 0$, que devient ce système en utilisant
+    la méthode proposée en 2002.
+\end{enumerate}
+
+Pour la suite du projet, on utilisera cherche à résoudre ce dernier système.
+
+\begin{enumerate}
+    \item Ecrivez le système de la MHD sous la forme d'une équation conservative. Quel sont les vecteurs 
+    de variables conservatives et primitives?
+    \item Ecrivez deux fonctions \emph{primitives} et \emph{conservatives} qui retournent respectivement 
+    les vecteurs de variables primitives et conservatives à partir des vecteurs de variables conservatives 
+    et primitives.
+    \item Ecrivez une fonction qui retourne un vecteur contenant le flux numérique.
+\end{enumerate}
+
+\subsection{Autre}
+
+\begin{enumerate}
+    \item Ecrivez une fonction \emph{Ref2Phy} qui prend en argument des coordonnées $(x,y)\in [0,1]^2$ et qui retourne 
+    les coordonnée $(z,t)\in [XMIN,XMAX]\times [YMIN,YMAX]$.
+    \item Ecrivez une fonction permettant d'initialiser le tableau.
+    \item Ecrivez une fonction \emph{TimesStepCPU1D} permettant de résoudre le problème MHD 1D à l'aide de la méthode des volumes 
+    finis et du flux de Rusanov.
+    \item Ecrivez une fonction \emph{TimesStepCPU2D} permettant de résoudre le problème MHD 2D à l'aide de la méthode des volumes 
+    finis et du flux de Rusanov.
+    \item BONUS : Même question que la précédente, en remplaçant le flux de Rusanov par un schéma décentré utilisant 
+    une approximation de la valeurs absolue à l'aide d'une fonction polynomiale.
+    \item BONUS + : Même question que la précédente précédente, en remplaçant le flux de Rusanov par un schéma décentré utilisant 
+    une approximation de la valeurs absolue à l'aide d'une fraction rationnelle.
+\end{enumerate}
+
+
+
+
+\end{document}
