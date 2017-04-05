@@ -179,7 +179,11 @@ void Wexact(real* x, real* y, real* W){
 
 
 
-
+void Ref2PhysMap(float* xx, float* yy, float* x, float* y)
+{
+  *xx = (*x < _XMIN) ? _XMIN : ( (*x > _XMAX) ? _XMAX : *x );
+  *yy = (*y < _YMIN) ? _YMIN : ( (*y > _YMAX) ? _YMAX : *y );
+}
 
 
 // gnuplot {{{
