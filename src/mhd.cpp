@@ -72,6 +72,66 @@ typedef float real;
 
 // }}}
 
+real* alloue_tab(int n)
+{
+  return (real*)malloc(n*sizeof(real));
+}
+
+void conservatives(real Y[_M], real W[_M])
+{
+  int i;
+  W[0] = Y[0];
+  for(i = 1; i < 4; i++)
+  {
+    W[i] = Y[i]*Y[0];
+  }
+  W[4] = (3*Y[4] + Y[0]*(Y[1]*Y[1] + Y[2]*Y[2] + Y[3]*Y[3]) + Y[5]*Y[5] + Y[6]*Y[6] + Y[7]*Y[7])/2;
+  for(i = 5; i < _M; i++)
+  {
+    W[i] = Y[i];
+  }
+}
+
+void primitives(real Y[_M], real W[_M])
+{
+  int i;
+  Y[0] = W[0];
+  for(i = 1; i < 4; i++)
+  {
+    Y[i] = W[i]/W[0];
+  }
+  Y[4] = (2*W[4] + Y[0]*(Y[1]*Y[1] + Y[2]*Y[2] + Y[3]*Y[3]) + W[5]*W[5] + W[6]*W[6] + W[7]*W[7])/3;
+  for(i = 5; i < _M; i++)
+  {
+    Y[i] = W[i];
+  }
+}
+
+real* flux(real W[_M], real n[3])
+{
+  real* F = alloue_tab(_M);
+  real Y[_M];
+  primitives(Y, W);
+  int i;
+  real BB = W[5]*W[5] + W[6]*W[6] + W[7]*W[7];
+  real Bn = W[5]*n[0] + W[6]*n[1] + W[7]*n[2];
+  real Bu = W[5]*Y[1] + W[6]*Y[2] + W[7]*Y[3];
+  real un = Y[1]*n[0] + Y[2]*n[1] + Y[3]*n[2];
+
+  F[0] = W[0]*un;
+  for(i = 1; i<4; i++)
+  {
+    F[i] = un*W[i] + (Y[2] + BB/2)*n[i-1] - Bn*W[i+4];
+  }
+  F[4] = (W[4] + Y[4] + BB/2)*un - Bu*Bn;
+  for(i = 5; i < 8; i++)
+  {
+    F[i] = un*W[i] - Bn*Y[i-4];
+  }
+  F[8] = _CH*_CH*Bn;
+  return F;
+}
+
 // wexact {{{
 void Wexact(real* x, real* y, real* W){
 
@@ -178,11 +238,10 @@ void Wexact(real* x, real* y, real* W){
 // }}}
 
 
-
-void Ref2PhysMap(float* xx, float* yy, float* x, float* y)
+void Ref2PhysMap(real* xx, real* yy, real* x, real* y)
 {
-  *x = (*xx < _XMIN) ? _XMIN : ( (*xx > _XMAX) ? _XMAX : *xx );
-  *y = (*yy < _YMIN) ? _YMIN : ( (*yy > _YMAX) ? _YMAX : *yy );
+  *x = *xx * _LONGUEURX - _XMIN;
+  *y = *yy * _LONGUEURY - _YMIN;
 }
 
 
