@@ -67,6 +67,7 @@ using namespace std;
 #define _GAM (1.666666666666)
 #define _PI (3.14159265359)
 #define _CH (5)
+#define _LAMBDA (6)
 
 typedef float real;
 
@@ -121,7 +122,7 @@ real* flux(real W[_M], real n[3])
   F[4] = (W[4] + Y[4] + BB/2)*un - Bu*Bn;
   for(i = 5; i < 8; i++)
   {
-    F[i] = un*W[i] - Bn*Y[i-4];
+    F[i] = un*W[i] - Bn*Y[i-4] + W[8] * n[i-5];
   }
   F[8] = _CH*_CH*Bn;
   return F;
@@ -261,7 +262,15 @@ void InitData(real Wn1[_NXTRANSBLOCK*_NYTRANSBLOCK*_M])
   }
 }
 
+void TimeStepCPU1D(real Wn1[_NXTRANSBLOCK*_NYTRANSBLOCK*_M], real* dtt)
+{
 
+}
+
+void TimeStepCPU2D(real Wn1[_NXTRANSBLOCK*_NYTRANSBLOCK*_M], real* dtt)
+{
+
+}
 
 // gnuplot {{{
 void GnuPlot(real Wn1[_NXTRANSBLOCK*_NYTRANSBLOCK*_M])
@@ -552,8 +561,8 @@ int main(int argc, char const* argv[]){
     InitData(Wn1);
 
     int iter = 0;
-    real dtt = 0;
-    /*for(real t=0;t<_TMAX; t=t+dtt){
+    real dtt = (_LONGUEURX/_NXTRANSBLOCK)/_LAMBDA;
+    for(real t=0;t<_TMAX; t=t+dtt){
 
         cout << "Iter="<<iter++<< endl;;
         #ifdef _1D
@@ -563,7 +572,7 @@ int main(int argc, char const* argv[]){
             TimeStepCPU2D(Wn1,&dtt);
         #endif
         cout << t << endl;
-    }*/
+    }
 
 #ifdef _1D
     GnuPlot(Wn1);
