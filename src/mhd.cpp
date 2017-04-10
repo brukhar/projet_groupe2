@@ -1,8 +1,8 @@
 // vim: set sw=4 ts=4 sts=4 et tw=78 foldmarker={{{,}}} foldlevel=0 foldmethod=marker spell:
 
 // cas {{{
-//#define _1D
-#define _2D
+#define _1D
+//#define _2D
 // }}}
 
 // include {{{
@@ -67,7 +67,6 @@ using namespace std;
 #define _GAM (1.666666666666)
 #define _PI (3.14159265359)
 #define _CH (5)
-#define _LAMBDA (6)
 
 typedef float real;
 
@@ -246,9 +245,9 @@ void InitData(real Wn1[_NXTRANSBLOCK*_NYTRANSBLOCK*_M])
   real x,y;
   real xx, yy;
   real W[_M];
-  for(i = 0; i < _NXTRANSBLOCK; i++)
+  for(j = 0; j < _NYTRANSBLOCK; j++)
   {
-    for(j = 0; j < _NYTRANSBLOCK; j++)
+    for(i = 0; i < _NXTRANSBLOCK; i++)
     {
       xx = ((real)i)/_NXTRANSBLOCK;
       yy = ((real)j)/_NYTRANSBLOCK;
@@ -256,20 +255,134 @@ void InitData(real Wn1[_NXTRANSBLOCK*_NYTRANSBLOCK*_M])
       Wexact(&x, &y, W);
       for(k = 0; k < _M; k++)
       {
-        Wn1[i*_NXTRANSBLOCK + j + k*(_NXTRANSBLOCK*_NYTRANSBLOCK)] = W[k];
+        Wn1[j*_NXTRANSBLOCK + i + k*(_NXTRANSBLOCK*_NYTRANSBLOCK)] = W[k];
       }
     }
   }
 }
 
+real* fluxRusanov(real WL[_M],real WR[_M],real n[3]){
+    real* res = (real*)malloc(_M*sizeof(real));
+    real* flux_WL = flux(WL,n);
+    real* flux_WR = flux(WR,n);
+    int i;
+
+    for (i=0;i<_M;i++)
+      res[i] = 0.5*(flux_WL[i]+flux_WR[i]) - _CH*0.5*(WR[i]-WL[i]);
+    free(flux_WL);
+    free(flux_WR);
+    return res;
+}
+
+void vectorWn1(real res[_M],real Wn1[_NXTRANSBLOCK*_NYTRANSBLOCK*_M],int i, int j){
+  int k;
+
+  for (k=0;k<_M;k++)
+    res[k]=Wn1[i+j*_NXTRANSBLOCK+k*_NXTRANSBLOCK*_NYTRANSBLOCK];
+}
+
+
 void TimeStepCPU1D(real Wn1[_NXTRANSBLOCK*_NYTRANSBLOCK*_M], real* dtt)
 {
+  real dxx=_LONGUEURX*1.0/_NXTRANSBLOCK;
+  real Wn1bis[_NXTRANSBLOCK*_NYTRANSBLOCK*_M];
+  real W_middle[_M],W_left[_M],W_right[_M];
+  real* fluxMR = NULL;
+  real* fluxLM = NULL;
+  real nx[3]={1,0,0};
+  int i,j,k;
+  int caseijk;
+  real zero = 0;
+  real max = _NXTRANSBLOCK;
 
+  /*Copie de Wn1 dans Wn1bis*/
+  for (i=0;i<_NXTRANSBLOCK*_NYTRANSBLOCK*_M;i++)
+    Wn1bis[i]=Wn1[i];
+
+  for (j=0;j<_NYTRANSBLOCK;j++){
+    for (i=0;i<_NXTRANSBLOCK;i++){
+      vectorWn1(W_middle,Wn1bis,i,j);
+
+      if (i==0) /*effet de bord à gauche*/
+        Wexact(&zero,&zero,W_left);
+      else
+        vectorWn1(W_left,Wn1bis,i-1,j);
+
+      if (i==_NXTRANSBLOCK-1) /*effet de bord à droite*/
+        Wexact(&max,&zero,W_right);
+      else
+        vectorWn1(W_right,Wn1bis,i+1,j);
+
+      fluxMR=fluxRusanov(W_middle,W_right,nx);
+      fluxLM=fluxRusanov(W_left,W_middle,nx);
+      for (k=0;k<_M;k++){
+        caseijk=i+j*_NXTRANSBLOCK+k*_NXTRANSBLOCK*_NYTRANSBLOCK;
+        Wn1[caseijk]=W_middle[k]-(*dtt/dxx)*(fluxMR[k]-fluxLM[k]);
+      }
+      free(fluxMR);
+      free(fluxLM);
+    }
+  }
 }
 
 void TimeStepCPU2D(real Wn1[_NXTRANSBLOCK*_NYTRANSBLOCK*_M], real* dtt)
 {
+  real dxx=_LONGUEURX*1.0/_NXTRANSBLOCK;
+  real dyy=_LONGUEURY*1.0/_NYTRANSBLOCK;
+  real Wn1bis[_NXTRANSBLOCK*_NYTRANSBLOCK*_M];
+  real W_middle[_M],W_left[_M],W_right[_M],W_up[_M],W_down[_M];
+  real* fluxMR = NULL;
+  real* fluxLM = NULL;
+  real* fluxMU = NULL;
+  real* fluxDM = NULL;
+  real nx[3]={1,0,0};
+  real ny[3]={0,1,0};
+  int i,j,k;
+  int caseijk;
 
+  /*Copie de Wn1 dans Wn1bis*/
+  for (i=0;i<_NXTRANSBLOCK*_NYTRANSBLOCK*_M;i++)
+    Wn1bis[i]=Wn1[i];
+
+  for (j=0;j<_NYTRANSBLOCK;j++){
+    for (i=0;i<_NXTRANSBLOCK;i++){
+      vectorWn1(W_middle,Wn1bis,i,j);
+
+      if (i==0) /*effet de bord à gauche*/
+        vectorWn1(W_left,Wn1bis,_NXTRANSBLOCK-1,j);
+      else
+        vectorWn1(W_left,Wn1bis,i-1,j);
+
+      if (i==_NXTRANSBLOCK-1) /*effet de bord à droite*/
+        vectorWn1(W_right,Wn1bis,0,j);
+      else
+        vectorWn1(W_right,Wn1bis,i+1,j);
+
+      if (j == 0)  /*effet de bord en bas*/
+        vectorWn1(W_down,Wn1bis,i,_NYTRANSBLOCK-1);
+      else
+        vectorWn1(W_down,Wn1bis,i,j-1);
+
+      if (j == _NYTRANSBLOCK-1)  /*effet de bord en haut*/
+        vectorWn1(W_up,Wn1bis,i,0);
+      else
+        vectorWn1(W_up,Wn1bis,i,j+1);
+
+      fluxMR=fluxRusanov(W_middle,W_right,nx);
+      fluxLM=fluxRusanov(W_left,W_middle,nx);
+      fluxMU=fluxRusanov(W_middle,W_up,ny);
+      fluxDM=fluxRusanov(W_down,W_middle,ny);
+
+      for (k=0;k<_M;k++){
+        caseijk=i+j*_NXTRANSBLOCK+k*_NXTRANSBLOCK*_NYTRANSBLOCK;
+        Wn1[caseijk]=W_middle[k]-(*dtt/dxx)*(fluxMR[k]-fluxLM[k])-(*dtt/dyy)*(fluxMU[k]-fluxDM[k]);
+      }
+      free(fluxMR);
+      free(fluxLM);
+      free(fluxMU);
+      free(fluxDM);
+    }
+  }
 }
 
 // gnuplot {{{
@@ -561,7 +674,7 @@ int main(int argc, char const* argv[]){
     InitData(Wn1);
 
     int iter = 0;
-    real dtt = (_LONGUEURX/_NXTRANSBLOCK)/_LAMBDA;
+    real dtt = _CFL*(_LONGUEURX*1.0/_NXTRANSBLOCK)/_CH;
     for(real t=0;t<_TMAX; t=t+dtt){
 
         cout << "Iter="<<iter++<< endl;;
