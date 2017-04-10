@@ -249,8 +249,8 @@ void InitData(real Wn1[_NXTRANSBLOCK*_NYTRANSBLOCK*_M])
   {
     for(j = 0; j < _NYTRANSBLOCK; j++)
     {
-      xx = i/_NXTRANSBLOCK;
-      yy = j/_NYTRANSBLOCK;
+      xx = ((real)i)/_NXTRANSBLOCK;
+      yy = ((real)j)/_NYTRANSBLOCK;
       Ref2PhysMap(&xx, &yy, &x, &y);
       Wexact(&x, &y, W);
       for(k = 0; k < _M; k++)
