@@ -1,8 +1,8 @@
 // vim: set sw=4 ts=4 sts=4 et tw=78 foldmarker={{{,}}} foldlevel=0 foldmethod=marker spell:
 
 // cas {{{
-//#define _1D
-#define _2D
+#define _1D
+//#define _2D
 // }}}
 
 // include {{{
@@ -440,8 +440,9 @@ void TimeStepCPU1D(real Wn1[_NXTRANSBLOCK*_NYTRANSBLOCK*_M], real* dtt)
   real nx[3]={1,0,0};
   int i,j,k;
   int caseijk;
+  real min = _XMIN;
   real zero = 0;
-  real max = _NXTRANSBLOCK;
+  real max = _XMAX;
 
   /*Copie de Wn1 dans Wn1bis*/
   for (i=0;i<_NXTRANSBLOCK*_NYTRANSBLOCK*_M;i++)
@@ -452,7 +453,7 @@ void TimeStepCPU1D(real Wn1[_NXTRANSBLOCK*_NYTRANSBLOCK*_M], real* dtt)
       vectorWn1(W_middle,Wn1bis,i,j);
 
       if (i==0) /*effet de bord à gauche*/
-        Wexact(&zero,&zero,W_left);
+        Wexact(&min,&zero,W_left);
       else
         vectorWn1(W_left,Wn1bis,i-1,j);
 
