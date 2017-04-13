@@ -1,8 +1,8 @@
 // vim: set sw=4 ts=4 sts=4 et tw=78 foldmarker={{{,}}} foldlevel=0 foldmethod=marker spell:
 
 // cas {{{
-#define _1D
-//#define _2D
+//#define _1D
+#define _2D
 // }}}
 
 // include {{{
@@ -136,64 +136,64 @@ void Wexact(real* x, real* y, real* W){
 //    // Test de Choc fort
 //    YL[0] = 3;
 //    YL[1] = 1.3;
-//    YL[3] = 0;
 //    YL[4] = 0;
-//    YL[2] = 3;
-//    YL[5] = 1;
+//    YL[2] = 0;
+//    YL[3] = 3;
 //    YL[6] = 1;
-//    YL[7] = 1.5;
+//    YL[7] = 1;
+//    YL[5] = 1.5;
 //    YL[8] = 0;
 //
 //    YR[0] = 1;
 //    YR[1] = 1.3;
-//    YR[3] = 0;
 //    YR[4] = 0;
-//    YR[2] = 1;
-//    YR[5] = 0.0707372016677029;
-//    YR[6] = 0.9974949866040544;
-//    YR[7] = 1.5;
+//    YR[2] = 0;
+//    YR[3] = 1;
+//    YR[6] = 0.0707372016677029;
+//    YR[7] = 0.9974949866040544;
+//    YR[5] = 1.5;
 //    YR[8] = 0;
 
 //    // Test de Brio et Wu
 //    YL[0] = 1;
 //    YL[1] = 0;
-//    YL[3] = 0;
 //    YL[4] = 0;
-//    YL[2] = 1;
-//    YL[5] = 1;
-//    YL[6] = 0;
-//    YL[7] = 0.75;
+//    YL[2] = 0;
+//    YL[3] = 1;
+//    YL[6] = 1;
+//    YL[7] = 0;
+//    YL[5] = 0.75;
 //    YL[8] = 0;
 //
 //    YR[0] = 0.125;
 //    YR[1] = 0;
-//    YR[3] = 0;
 //    YR[4] = 0;
-//    YR[2] = 0.1;
-//    YR[5] = -1;
-//    YR[6] = 0;
-//    YR[7] = 0.75;
+//    YR[2] = 0;
+//    YR[3] = 0.1;
+//    YR[6] = -1;
+//    YR[7] = 0;
+//    YR[5] = 0.75;
 //    YR[8] = 0;
 
     //Test de Dai et Woodward
     YL[0] = 1.08;
     YL[1] = 1.2;
-    YL[3] = 0.01;
-    YL[4] = 0.5;
-    YL[2] = 0.95;
-    YL[5] = 1.0155412503859613165;
-    YL[6] = 0.56418958354775628695;
-    YL[7] = 1.1283791670955125739;
+    YL[4] = 0.01;
+    YL[2] = 0.5;
+    YL[3] = 0.95;
+    YL[6] = 1.0155412503859613165;
+    YL[7] = 0.56418958354775628695;
+    YL[5] = 1.1283791670955125739;
     YL[8] = 0;
 
     YR[0] = 1;
     YR[1] = 0;
-    YR[3] = 0;
     YR[4] = 0;
-    YR[2] = 1;
+    YR[2] = 0;
+    YR[3] = 1;
+    YR[6] = 1.1283791670955125739;
+    YR[7] = 0.56418958354775628695;
     YR[5] = 1.1283791670955125739;
-    YR[6] = 0.56418958354775628695;
-    YR[7] = 1.1283791670955125739;
     YR[8] = 0;
 
 
@@ -216,15 +216,15 @@ void Wexact(real* x, real* y, real* W){
 
     real gam = _GAM;
 
-    Y[0] = gam*gam;
-    Y[1] = -sin(*y);
-    Y[2] = gam;
-    Y[3] = sin(*x);
-    Y[4] = 0.0;
-    Y[5] = sin(2*(*x));
-    Y[6] = 0.0;
-    Y[7] = -sin(*y);
-    Y[8] = 0.0;
+    Y[0] = gam*gam; //rho
+    Y[1] = -sin(*y); //Ux
+    Y[4] = gam; //p
+    Y[2] = sin(*x); //Uy
+    Y[3] = 0.0; //Uz
+    Y[6] = sin(2*(*x)); //By
+    Y[7] = 0.0; //Bz
+    Y[5] = -sin(*y);  //Bx
+    Y[8] = 0.0; //psi
 
     conservatives(Y, W);
 #endif
@@ -232,6 +232,106 @@ void Wexact(real* x, real* y, real* W){
 }
 // }}}
 
+real* matFoisVect(real A[_M][_M], real V[_M])
+{
+  real* res = (real*)malloc(_M*sizeof(real));
+  int i,j;
+  for(i=0; i < _M; i++)
+  {
+    res[i]=0;
+    for(j=0; j < _M; j++)
+    {
+      res[i] += A[i][j]*V[j];
+      if(isnan(res[i]))
+      {
+        cout << A[i][j] << " fois " << V[j] << " = " << res[i] << endl;
+        exit(1);
+      }
+    }
+  }
+  return res;
+}
+
+real* addVect(real V1[_M], real V2[_M], int soustraction)
+{
+  real* res = (real*)malloc(_M*sizeof(real));
+  int i;
+  for(i=0; i<_M; i++)
+  {
+    if(soustraction)
+      res[i] = V1[i] - V2[i];
+    else
+      res[i] = V1[i] + V2[i];
+  }
+  return res;
+}
+
+void realFoisVect(real V[_M], real a)
+{
+  int i;
+  for(i=0; i<_M; i++)
+  {
+    V[i] = V[i]*a;
+  }
+}
+
+void matA(real A[_M][_M], real W[_M], real n[3])
+{
+  real Y[_M];
+  int i,j;
+  primitives(Y, W);
+  real Bn = W[5]*n[0] + W[6]*n[1] + W[7]*n[2];
+  real Bu = W[5]*Y[1] + W[6]*Y[2] + W[7]*Y[3];
+  real un = Y[1]*n[0] + Y[2]*n[1] + Y[3]*n[2];
+  for(i=0; i < _M; i++)
+  {
+    for(j=0; j<_M; j++)
+    {
+      A[i][j] = 0;
+    }
+  }
+
+  for(i=0; i < 5; i++)
+  {
+    A[i][i] = un;
+  }
+  for(i=0; i < 3; i++)
+  {
+    A[0][i+1] = Y[0] * n[i];
+    A[i+1][4] = n[i] / Y[0];
+    A[4][i+1] = _GAM * Y[4]*n[i];
+    A[i+1][i+5] = - Bn / Y[0];
+    A[4][i+5] = (_GAM - 1)*Bu*n[i];
+    A[8][i+5] = _CH*_CH*n[i];
+    A[i+5][8] = n[i];
+  }
+  A[4][8] = (1 - _GAM)*Bn;
+  A[5][2] = Y[5]*n[1];
+  A[5][3] = Y[5]*n[2];
+  A[6][1] = Y[6]*n[0];
+  A[6][3] = Y[6]*n[2];
+  A[7][1] = Y[7]*n[0];
+  A[7][2] = Y[7]*n[1];
+  A[5][5] = Y[2]*n[1] + Y[3]*n[2];
+  A[6][6] = Y[1]*n[0] + Y[3]*n[2];
+  A[7][7] = Y[1]*n[0] + Y[2]*n[1];
+  A[5][6] = -Y[1]*n[1];
+  A[5][7] = -Y[1]*n[2];
+  A[6][5] = -Y[2]*n[0];
+  A[6][7] = -Y[2]*n[2];
+  A[7][5] = -Y[3]*n[0];
+  A[7][6] = -Y[3]*n[1];
+  A[5][1] = -Y[6]*n[1] - Y[7]*n[2];
+  A[6][2] = -Y[5]*n[0] - Y[7]*n[2];
+  A[7][3] = -Y[5]*n[0] - Y[6]*n[1];
+  //moins sûr
+  A[1][6] = (/*Y[6]*n[0]*/ - Y[5]*n[1])/Y[0];
+  A[1][7] = (/*Y[7]*n[0]*/ - Y[5]*n[2])/Y[0];
+  A[2][5] = (-Y[6]*n[0]/* + Y[5]*n[1]*/)/Y[0];
+  A[2][7] = (-Y[6]*n[2]/* + Y[7]*n[1]*/)/Y[0];
+  A[3][5] = (-Y[7]*n[0]/* + Y[5]*n[2]*/)/Y[0];
+  A[2][7] = (/*Y[6]*n[2] */- Y[7]*n[1])/Y[0];
+}
 
 void Ref2PhysMap(real* xx, real* yy, real* x, real* y)
 {
@@ -259,6 +359,54 @@ void InitData(real Wn1[_NXTRANSBLOCK*_NYTRANSBLOCK*_M])
       }
     }
   }
+}
+
+real* fluxPolynomial(real WL[_M], real WR[_M], real n[3])
+{
+    int i;
+    real* res = (real*)malloc(_M*sizeof(real));
+    real* flux_WL = flux(WL,n);
+    real* flux_WR = flux(WR,n);
+
+    real* V = NULL;
+    real* dW = addVect(WR, WL, 1);
+    real A[_M][_M];
+    real* Wmil = addVect(WL, WR, 0);
+    realFoisVect(Wmil, 0.5);
+    matA(A, Wmil, n);
+
+    real* AdW = matFoisVect(A, dW);
+    real* A2 = matFoisVect(A, AdW);
+    realFoisVect(dW, -5./16);
+    real* tmp = addVect(dW, A2, 0);
+    realFoisVect(dW, -3);
+    real* A3 = matFoisVect(A, tmp);
+    real* A4 = matFoisVect(A, A3);
+    free(tmp);
+    tmp = addVect(dW, A4, 0);
+    real* A5 = matFoisVect(A, tmp);
+    real* A6 = matFoisVect(A, A5);
+    realFoisVect(dW, 1./3);
+
+    V = addVect(dW, A6, 0);
+
+    for (i=0;i<_M;i++)
+    {
+      res[i] = 0.5*(flux_WL[i]+flux_WR[i]) - 0.5*V[i];
+    }
+    free(flux_WL);
+    free(flux_WR);
+    free(Wmil);
+    free(dW);
+    free(AdW);
+    free(A2);
+    free(A3);
+    free(A4);
+    free(A5);
+    free(A6);
+    free(V);
+    free(tmp);
+    return res;
 }
 
 real* fluxRusanov(real WL[_M],real WR[_M],real n[3]){
@@ -373,8 +521,13 @@ void TimeStepCPU2D(real Wn1[_NXTRANSBLOCK*_NYTRANSBLOCK*_M], real* dtt)
       fluxMU=fluxRusanov(W_middle,W_up,ny);
       fluxDM=fluxRusanov(W_down,W_middle,ny);
 
+      /*fluxMR=fluxPolynomial(W_middle,W_right,nx);
+      /*fluxLM=fluxPolynomial(W_left,W_middle,nx);
+      fluxMU=fluxPolynomial(W_middle,W_up,ny);
+      fluxDM=fluxPolynomial(W_down,W_middle,ny);*/
+
       for (k=0;k<_M;k++){
-        caseijk=i+j*_NXTRANSBLOCK+k*_NXTRANSBLOCK*_NYTRANSBLOCK;
+        caseijk=i + j*_NXTRANSBLOCK + k*_NXTRANSBLOCK*_NYTRANSBLOCK;
         Wn1[caseijk]=W_middle[k]-(*dtt/dxx)*(fluxMR[k]-fluxLM[k])-(*dtt/dyy)*(fluxMU[k]-fluxDM[k]);
       }
       free(fluxMR);
@@ -551,22 +704,22 @@ void PlotGmshBinary(real Wn1[_NXTRANSBLOCK*_NYTRANSBLOCK*_M]){
                 fic << "\"UX  \""<<endl; // nom de la vue
                 break;
             case 2:
-                fic << "\"P  \""<<endl; // nom de la vue
-                break;
-            case 3:
                 fic << "\"UY  \""<<endl; // nom de la vue
                 break;
+            case 3:
+                fic << "\"UZ  \""<<endl; // nom de la vue
+                break;
             case 4:
-                fic << "\"UZ\""<<endl; // nom de la vue
+                fic << "\"P\""<<endl; // nom de la vue
                 break;
             case 5:
-                fic << "\"BY  \""<<endl; // nom de la vue
+                fic << "\"BX  \""<<endl; // nom de la vue
                 break;
             case 6:
-                fic << "\"BZ\""<<endl; // nom de la vue
+                fic << "\"BY\""<<endl; // nom de la vue
                 break;
             case 7:
-                fic << "\"BX  \""<<endl; // nom de la vue
+                fic << "\"BZ  \""<<endl; // nom de la vue
                 break;
             case 8:
                 fic << "\"PSI \""<<endl; // nom de la vue
@@ -596,25 +749,25 @@ void PlotGmshBinary(real Wn1[_NXTRANSBLOCK*_NYTRANSBLOCK*_M]){
                 k=(i+j*_NXTRANSBLOCK)+1*_NXTRANSBLOCK*_NYTRANSBLOCK;
                 ux=(Wn1[k])/rho;
 
-                k=(i+j*_NXTRANSBLOCK)+3*_NXTRANSBLOCK*_NYTRANSBLOCK;
+                k=(i+j*_NXTRANSBLOCK)+2*_NXTRANSBLOCK*_NYTRANSBLOCK;
                 uy=(Wn1[k])/rho;
 
-                k=(i+j*_NXTRANSBLOCK)+4*_NXTRANSBLOCK*_NYTRANSBLOCK;
+                k=(i+j*_NXTRANSBLOCK)+3*_NXTRANSBLOCK*_NYTRANSBLOCK;
                 uz=(Wn1[k])/rho;
 
-                k=(i+j*_NXTRANSBLOCK)+5*_NXTRANSBLOCK*_NYTRANSBLOCK;
+                k=(i+j*_NXTRANSBLOCK)+6*_NXTRANSBLOCK*_NYTRANSBLOCK;
                 by=(Wn1[k]);
 
-                k=(i+j*_NXTRANSBLOCK)+6*_NXTRANSBLOCK*_NYTRANSBLOCK;
+                k=(i+j*_NXTRANSBLOCK)+7*_NXTRANSBLOCK*_NYTRANSBLOCK;
                 bz=(Wn1[k]);
 
-                k=(i+j*_NXTRANSBLOCK)+7*_NXTRANSBLOCK*_NYTRANSBLOCK;
+                k=(i+j*_NXTRANSBLOCK)+5*_NXTRANSBLOCK*_NYTRANSBLOCK;
                 bx=(Wn1[k]);
 
                 k=(i+j*_NXTRANSBLOCK)+8*_NXTRANSBLOCK*_NYTRANSBLOCK;
                 psi=(Wn1[k]);
 
-                k=(i+j*_NXTRANSBLOCK)+2*_NXTRANSBLOCK*_NYTRANSBLOCK;
+                k=(i+j*_NXTRANSBLOCK)+4*_NXTRANSBLOCK*_NYTRANSBLOCK;
                 p=(gam-1)*(Wn1[k] - 0.5*rho*(ux*ux+uy*uy+uz*uz) - 0.5*(bx*bx+by*by+bz*bz));
 
 
@@ -626,22 +779,22 @@ void PlotGmshBinary(real Wn1[_NXTRANSBLOCK*_NYTRANSBLOCK*_M]){
                         val=ux;
                         break;
                     case 2:
-                        val=p;
-                        break;
-                    case 3:
                         val=uy;
                         break;
-                    case 4:
+                    case 3:
                         val=uz;
                         break;
+                    case 4:
+                        val=p;
+                        break;
                     case 5:
-                        val=by;
+                        val=bx;
                         break;
                     case 6:
-                        val=bz;
+                        val=by;
                         break;
                     case 7:
-                        val=bx;
+                        val=bz;
                         break;
                     case 8:
                         val=psi;
